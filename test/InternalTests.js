@@ -177,7 +177,7 @@ exports.Accessors = {
             Callback();
         });
     },
-    'setget': function(Test) {
+    'Testsetget': function(Test) {
         Test.expect(24);
         function TestPermutation(TimeToLive, IndexSessionID, Callback)
         {
@@ -221,7 +221,7 @@ exports.Accessors = {
             });
         });
     },
-    'destroy': function(Test) {
+    'Testdestroy': function(Test) {
         Test.expect(12);
         function TestPermutation(TimeToLive, IndexSessionID, Callback)
         {
@@ -268,7 +268,7 @@ exports.Accessors = {
             });
         });
     },
-    'length': function(Test) {
+    'Testlength': function(Test) {
         Test.expect(20);
         function TestPermutation(TimeToLive, IndexSessionID, Callback)
         {
@@ -313,7 +313,7 @@ exports.Accessors = {
             });
         });
     },
-    'clear': function(Test) {
+    'Testclear': function(Test) {
         Test.expect(20);
         function TestPermutation(TimeToLive, IndexSessionID, Callback)
         {
@@ -350,6 +350,90 @@ exports.Accessors = {
 };
 
 exports.ErrorHandling = {
+    'setUp': function(Callback) {
+        MongoDB.MongoClient.connect("mongodb://localhost:27017/"+RandomIdentifier, {native_parser:true}, function(Err, DB) {
+            if(Err)
+            {
+                console.log(Err);
+            }
+            Context['DB'] = DB;
+            Callback();
+        });
+    },
+    'tearDown': function(Callback) {
+        Context['DB'] = null;
+        Callback();
+    },
+    'TestEnsureDependencies': function(Test) {
+        Test.expect(1);
+        Context.DB.dropDatabase(function(Err, Result) {
+            Context.DB.close();
+            Store.prototype.UnitTestCalls['EnsureDependencies'].call(Context, function(Err) {
+                Test.ok(Err,"Confirming EnsureDependencies handles database errors.");
+                Test.done();
+            });
+        });
+    },
+    'Testset': function(Test) {
+        Test.expect(1);
+        Store(Context['DB'], function(Err, TestStore) {
+            Context.DB.dropDatabase(function(Err, Result) {
+                Context.DB.close();
+                TestStore.set('a', {}, function(Err) {
+                    Test.ok(Err,"Confirming set handles database errors.");
+                    Test.done();
+                });
+            });
+        });
+    },
+    'Testget': function(Test) {
+        Test.expect(1);
+        Store(Context['DB'], function(Err, TestStore) {
+            Context.DB.dropDatabase(function(Err, Result) {
+                Context.DB.close();
+                TestStore.get('a', function(Err, Session) {
+                    Test.ok(Err,"Confirming get handles database errors.");
+                    Test.done();
+                });
+            });
+        });
+    },
+    'Testdestroy': function(Test) {
+        Test.expect(1);
+        Store(Context['DB'], function(Err, TestStore) {
+            Context.DB.dropDatabase(function(Err, Result) {
+                Context.DB.close();
+                TestStore.destroy('a', function(Err) {
+                    Test.ok(Err,"Confirming destroy handles database errors.");
+                    Test.done();
+                });
+            });
+        });
+    },
+    'Testlength': function(Test) {
+        Test.expect(1);
+        Store(Context['DB'], function(Err, TestStore) {
+            Context.DB.dropDatabase(function(Err, Result) {
+                Context.DB.close();
+                TestStore.length(function(Err, Count) {
+                    Test.ok(Err,"Confirming length handles database errors.");
+                    Test.done();
+                });
+            });
+        });
+    },
+    'Testclear': function(Test) {
+        Test.expect(1);
+        Store(Context['DB'], function(Err, TestStore) {
+            Context.DB.dropDatabase(function(Err, Result) {
+                Context.DB.close();
+                TestStore.clear(function(Err) {
+                    Test.ok(Err,"Confirming clear handles database errors.");
+                    Test.done();
+                });
+            });
+        });
+    }
 };
 
 process.on('uncaughtException', function(MainErr) {
