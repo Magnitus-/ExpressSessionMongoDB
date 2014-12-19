@@ -35,5 +35,8 @@
   "scripts": {
     "test": "./node_modules/nodeunit/bin/nodeunit test"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "directories": {
+    "test": "test"
+  }
 }
