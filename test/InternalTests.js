@@ -221,6 +221,18 @@ exports.Accessors = {
             });
         });
     },
+    'TestFilter': function(Test) {
+        Test.expect(2);
+        Store(Context['DB'], function(Err, TestStore) {
+            TestStore.set('a', {'a.b': [1, 2, {'a': 1, '$b\0c': {'Test.Testdot-*-dot*-': 35}}]}, function(Err) {
+                Test.ok(!Err, "Confirming that ., $ and null are threated as valid input when filter is specified.");
+                TestStore.get('a', function(Err, SessionA) {
+                    Test.ok(SessionA['a.b'] && Array.isArray(SessionA['a.b']) && SessionA['a.b'][2]['$b\0c'] && SessionA['a.b'][2]['$b\0c']['Test.Testdot-*-dot*-'] && SessionA['a.b'][2]['$b\0c']['Test.Testdot-*-dot*-']==35, "Confirming that filtering works on non-trivial cases.");
+                    Test.done();
+                });
+            });
+        }, {'Filter': true});
+    },
     'Testdestroy': function(Test) {
         Test.expect(12);
         function TestPermutation(TimeToLive, IndexSessionID, Callback)
@@ -385,6 +397,24 @@ exports.ErrorHandling = {
                 });
             });
         });
+    },
+    'TestFilter': function(Test) {
+        Test.expect(3);
+        Store(Context['DB'], function(Err, TestStore) {
+            TestStore.set('a', {'a.b':1}, function(Err) {
+                Test.ok(Err, "Confirming that . is threated as error for key by default");
+                TestStore.set('a', {'a$b':1}, function(Err) {
+                    Test.ok(Err, "Confirming that $ is threated as error for key by default");
+                    TestStore.set('a', {'a\0b':1}, function(Err) {
+                        Test.ok(Err, "Confirming that null is threated as error for key by default");
+                        Context.DB.dropDatabase(function(Err, Result) {
+                            Context.DB.close();
+                            Test.done();
+                        });
+                    });
+                })
+            });
+        }, {'Filter': false});
     },
     'Testget': function(Test) {
         Test.expect(1);

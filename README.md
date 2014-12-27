@@ -8,15 +8,15 @@ This implementation uses the MongoDB database.
 Requirements
 ============
 
-- A recent version of MongoDB (version 2.4.9 is installed on my machine) *
+- A recent version of MongoDB (version 2.4.9 is installed on my machine) [1]
 
-- A recent version of Node.js (version 0.10.25 is installed on my machine) *
+- A recent version of Node.js (version 0.10.25 is installed on my machine) [1]
 
 - npm if you want the easy way to install this module.
 
 - Read the package.json file for other dependencies. The devDependencies are solely to run the tests and not required for production.
 
-* Later versions should also work. If you find it not to be the case, let me know.
+[1] Later versions should also work. If you find it not to be the case, let me know.
 
 Installation
 ============
@@ -62,25 +62,26 @@ The express-session-mongodb module returns a function with the following signatu
 function(<DBHandle>, <Callback>, <Options>);
 ```
 
-'DBHandle' is the database handle that the store will operate on. It should be obtained using the MongoDB driver.
-'Callback' is the function that will be called when the session store instance (and its underlying database collection/index dependencies) have been created.
-'Options' are the options you can pass to the session store instance.
+&lt;DBHandle&gt; is the database handle that the store will operate on. It should be obtained using the MongoDB driver.
 
-'Options' is an object with the following properties:
+&lt;Options&gt; are the options you can pass to the session store instance. It is an object with the following properties: 
 
-SessionID: Can be either true or false (default). If true, session IDs will be indexed with a unique requirement in the MongoDB database, making the creation of sessions slower, but their access faster. It will also report an error if 2 sessions with duplicate IDs are generated.
-TimeToLive: Integer than can be 0 (default) or greater. If greater than 0, a Time-to-Live index will be set which will represent how long (in seconds) a session can be idle in the database (neither written to nor accessed) before MongoDB deletes it.
+- SessionID: Can be either true or false (default). If true, session IDs will be indexed with a unique requirement in the MongoDB database, making the creation of sessions slower, but their access faster. It will also report an error if 2 sessions with duplicate IDs are generated.
+
+- TimeToLive: Integer than can be 0 (default) or greater. If greater than 0, a Time-to-Live index will be set which will represent how long (in seconds) a session can be idle in the database (neither written to nor accessed) before MongoDB deletes it.
 Note that according to the author of "MongoDB: The Definitive Guide", MongoDB check on Time-To-Live indexes about once per minute, so you should not rely on a session getting deleted the exact second it expires.
 
+- Filter: Can be true or false (default). If set to true, the '.', '$' and '\0' special characters are sanitized in session properties before storage. Necessary to store sessions with properties that contains those characters. You can gain a bit of speed by setting this to false if you are certain your session properties won't contain those characters. 
 
-'Callback' takes the following signature: 
+&lt;Callback&gt; is the function that will be called when the session store instance (and its underlying database collection/index dependencies) have been created. It takes the following signature: 
 
 ```javascript
 function(<Err>, <StoreInstance>)
 ```
 
-'Err' is null if no error occured (otherwise it contains the error object).
-'StoreInstance' is the resulting store instance you can pass to express-session.
+&lt;Err&gt; is null if no error occured (otherwise it contains the error object).
+
+&lt;StoreInstance&gt; is the resulting store instance you can pass to express-session.
 
 Future
 ======
@@ -93,3 +94,23 @@ Immediate plans for this module include more integration tests (internal tests a
 - Running tests with IndexSessionID set to true, to ensure that express-session properly bubble ups the potential error that occurs with duplicate session IDs and allows the user to set a handler for it.
 
 Longer term plans include implementing further useful options you can pass to the constructor as well as an evented API. 
+
+Versions History
+================
+
+1.0.0 
+-----
+
+Initial Release. 
+
+1.0.1 
+-----
+
+Documentation display fix.
+
+1.1.1
+-----
+
+- Add filter functionality to permit keys in sessions to contain '$', '.' or '\0'. 
+- More tests
+- Documentation formatting fix
