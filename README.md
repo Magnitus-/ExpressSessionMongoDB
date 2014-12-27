@@ -108,7 +108,7 @@ Initial Release.
 
 Documentation display fix.
 
-1.1.1
+1.1.0
 -----
 
 - Add filter functionality to permit keys in sessions to contain '$', '.' or '\0'. 
