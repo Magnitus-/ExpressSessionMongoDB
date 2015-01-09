@@ -89,20 +89,20 @@ function(<Err>, <StoreInstance>)
 
 &lt;StoreInstance&gt; is the resulting store instance you can pass to express-session.
 
-TimeToLive and express-session
-------------------------------
+Additional Notes on TimeToLive and express-session
+--------------------------------------------------
 
 For those who use the TimeToLive options (which introduces the phenomemon of sessions being deleted in the database without express-session knowing it):
 
-If sessions are deleted between request (when Req.session doesn't exist), express-session will just automatically generate a new session (blank with a new ID) whenever a client submits a cookie for a session that doesn't exist
+If sessions are deleted between request (when Req.session doesn't exist), express-session will just automatically generate a new session (blank with a new ID) whenever a client submits a request with a cookie for a session that doesn't exist.
 
 Things get just a little more complicated if a session gets deleted while the server is processing a request (when Req.session exists) which could feasibly happen if TimeToLive is very short and a requests takes a while to process:
 
-- Manipulations on the Req.session will behave as normal and the session will be re-saved in the database when the request returns (ok for TimeToLive, probably bad if you want to delete sessions from an admin panel)
+- Manipulations on the Req.session will behave as normal and the session will be re-saved in the database when the request returns (ok for TimeToLive, probably bad if you want to implement reliably deleting sessions from an admin panel)
 
 - Calls to Req.session.regenerate or Req.session.destroy will not report an error and will behave as expected: a new generation will be created during the request in the former and the Req.session object will be taken down in the later (nothing will be done in the database, because the session will already have been deleted there)
 
-- Calls to Req.session.reload won't do anything (there is session in the database to reload from), but will report an error.
+- Calls to Req.session.reload won't do anything (there is no session in the database to reload from), but will report an error.
 
 - Calls to Req.session.save will behave as expected and will save the session back to the database (in this case, re-create it).
 
@@ -139,5 +139,5 @@ Documentation display fix.
 1.1.1
 -----
 
-- Fixed some documentation errors.
+- Expended on documentation and fixed some documentation errors.
 - Added TimeToLive tests.
