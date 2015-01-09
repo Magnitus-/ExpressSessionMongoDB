@@ -70,7 +70,7 @@ function(<DBHandle>, <Callback>, <Options>);
 
 - IndexSessionID: Can be either true or false (default). If true, session IDs will be indexed with a unique requirement in the MongoDB database, making the creation of sessions slower, but their access faster. 
 
-While theorically, an error should be reported if duplicate session IDs are created, this will never happen in practice because of the way the express-session project is implemented (the fact that the call it makes to create or update a session in the database are the same). Rather, if ever express-session somehow creates two sessions with duplicate IDs, one will overwrite the error. Obviously, a good key generator will make this occurence logically or probabilistically impossible.
+While theorically, an error should be reported if duplicate session IDs are created, this will never happen in practice because of the way the express-session project is implemented (the fact that the call it makes to create or update a session in the database are the same). Rather, if ever express-session somehow creates two sessions with duplicate IDs, one will overwrite the other. Obviously, a good key generator will make this occurence logically or probabilistically impossible.
 
 Additional note: I tried passing a key generator that always generated the same key to express-session to see how it would react, but it appended some random string to the generated keys so express-session does seem to take extra precautions to avoid collisions.
 
