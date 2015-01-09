@@ -10,10 +10,12 @@ Http = require('http');
 var RandomIdentifier = 'ExpressSessionMongoDBTestDB'+Math.random().toString(36).slice(-8);
 var Context = {};
 
-function Setup(Options, Callback)
+function Setup(Options, Callback, StoreOptions)
 {
     MongoDB.MongoClient.connect("mongodb://localhost:27017/"+RandomIdentifier, {native_parser:true}, function(Err, DB) {
         Context['DB'] = DB;
+        Context['Delete'] = 0;
+        Context['LastError'] = null;
         Store(DB, function(Err, SessionStore) {
             Context['Store'] = SessionStore;
             Options['store'] = SessionStore;
@@ -21,83 +23,124 @@ function Setup(Options, Callback)
             Context['App'].use(Session(Options));
             //In a real world production case, you'd want to do some sanitization and error checking on URL input
             //As it is, I trust myself to have no malicious intent with regard to my test server
-            Context['App'].post('/:Var/Increment', function(Req, Res) {
-                if(Req.session[Req.params.Var])
+            function ProcessDeletions(Callback)
+            {
+                if(Context['Delete']==1)
                 {
-                    Req.session[Req.params.Var]+=1;
+                    Context['Delete'] = 0;
+                    Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+                        SessionsCollection.remove({}, function(Err, Result) {
+                            Callback();
+                        });
+                    });
                 }
                 else
                 {
-                    Req.session[Req.params.Var]=1;
+                    Callback();
                 }
+            }
+            Context['App'].put('/FlagDelete', function(Req, Res) {
+                Context['Delete'] = 1;
                 Res.end();
             });
-            Context['App'].post('/:List/Append/:Var', function(Req, Res) {
-                if(!Req.session[Req.params.List])
-                {
-                    Req.session[Req.params.List]=[];
-                }
-                Req.session[Req.params.List].push(Req.session[Req.params.Var]);
-                Res.end();
-            });
-            Context['App'].get('/:Var', function(Req, Res) {
-                Res.json({'Value': Req.session[Req.params.Var]});
-            });
-            Context['App'].put('/Session/Regeneration', function(Req, Res) {
-                Req.session.regenerate(function(Err) {
+            Context['App'].post('/:Var/Increment', function(Req, Res) {
+                ProcessDeletions(function() {
+                    if(Req.session[Req.params.Var])
+                    {
+                        Req.session[Req.params.Var]+=1;
+                    }
+                    else
+                    {
+                        Req.session[Req.params.Var]=1;
+                    }
                     Res.end();
                 });
             });
-            Context['App'].put('/Session/Destruction', function(Req, Res) {
-                Req.session.destroy(function(Err) {
+            Context['App'].post('/:List/Append/:Var', function(Req, Res) {
+                ProcessDeletions(function() {
+                    if(!Req.session[Req.params.List])
+                    {
+                        Req.session[Req.params.List]=[];
+                    }
+                    Req.session[Req.params.List].push(Req.session[Req.params.Var]);
                     Res.end();
+                });
+            });
+            Context['App'].get('/:Var', function(Req, Res) {
+                ProcessDeletions(function() {
+                    Res.json({'Value': Req.session[Req.params.Var]});
+                });
+            });
+            Context['App'].put('/Session/Regeneration', function(Req, Res) {
+                ProcessDeletions(function() {
+                    Req.session.regenerate(function(Err) {
+                        Context['LastError'] = Err;
+                        Res.end();
+                    });
+                });
+            });
+            Context['App'].put('/Session/Destruction', function(Req, Res) {
+                ProcessDeletions(function() {
+                    Req.session.destroy(function(Err) {
+                        Context['LastError'] = Err;
+                        Res.end();
+                    });
                 });
             });
             Context['App'].put('/Session/Reload/:Var', function(Req, Res) {
                 //<Var> shouldn't be changed. 
                 //It was put here to enable testing of the desired functionality.
-                if(Req.session[Req.params.Var])
-                {
-                    Req.session[Req.params.Var]+=1;
-                }
-                else
-                {
-                    Req.session[Req.params.Var]=1;
-                }
-                Req.session.reload(function(Err) {
-                    Res.end();
+                ProcessDeletions(function() {
+                    if(Req.session[Req.params.Var])
+                    {
+                        Req.session[Req.params.Var]+=1;
+                    }
+                    else
+                    {
+                        Req.session[Req.params.Var]=1;
+                    }
+                    Req.session.reload(function(Err) {
+                        Context['LastError'] = Err;
+                        Res.end();
+                    });
                 });
             });
             Context['App'].put('/Session/Save/:Var', function(Req, Res) {
                 //<Var> should be changed incremented. 
                 //It was put here to enable testing of the desired functionality.
-                if(Req.session[Req.params.Var])
-                {
-                    Req.session[Req.params.Var]+=1;
-                }
-                else
-                {
-                    Req.session[Req.params.Var]=1;
-                }
-                Req.session.save(function(Err) {
-                    Req.session.reload(function(Err) {
-                        Res.end();
+                ProcessDeletions(function() {
+                    if(Req.session[Req.params.Var])
+                    {
+                        Req.session[Req.params.Var]+=1;
+                    }
+                    else
+                    {
+                        Req.session[Req.params.Var]=1;
+                    }
+                    Req.session.save(function(Err) {
+                        Context['LastError'] = Err;
+                        Req.session.reload(function(Err) {
+                            Res.end();
+                        });
                     });
                 });
             });
             Context['App'].use(function(Err, Req, Res, Next) {
+                Context['LastError'] = Err;
                 console.error('Error on test server: '+Err);
             });
             Context['Server'] = Http.createServer(Context['App']);
             Context['Server'].listen(8080, function() {
                 Callback();
             });
-        });
+        }, StoreOptions);
     });
 }
 
 function TearDown(Callback)
 {
+    Context['Delete'] = 0;
+    Context['LastError'] = null;
     Context['Server'].close(function() {
         Context.DB.dropDatabase(function(Err, Result) {
             Context.DB.close();
@@ -234,6 +277,124 @@ exports.BasicSetup = {
                 Handler.Request('GET', '/Test', true, function(Body) {
                     Test.ok(Body['Value']==2,'Confirming that session was proprerly saved.');
                     Test.done();
+                });
+            });
+        });
+    }
+};
+ 
+exports.TimeToLive = {
+    'setUp': function(Callback) {
+        Setup({'secret': 'qwerty!'}, Callback, {'TimeToLive': 2});
+    },
+    'tearDown': function(Callback) {
+        TearDown(Callback);
+    },
+    'TestBefore': function(Test) {
+        Test.expect(2);
+        var Handler = new RequestHandler();
+        Handler.Request('POST', '/Test/Increment', false, function() {
+            var InitialSessionID = Handler.SessionID;
+            setTimeout(function() {
+                Handler.Request('GET', '/Test', true, function(Body) {
+                    Test.ok(Handler.SessionID!=InitialSessionID, "Confirming that previous session was deleted and that express-session generated a new one.");
+                    Test.ok(!Body['Value'], "Confirming that new session is empty.");
+                    Test.done();
+                });
+            }, 72000);
+        });
+    },
+   'TestObjectAPIDuring': function(Test) {
+        Test.expect(4);
+        var Handler = new RequestHandler();
+        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+            Handler.Request('PUT', '/FlagDelete', false, function() {
+                var InitialSessionID = Handler.SessionID;
+                Handler.Request('POST', '/Test/Increment', false, function() {
+                    Test.ok(Handler.SessionID==InitialSessionID, "Confirming that express-session saved the in-memory data, re-creating the session in the database.");
+                    Test.ok(!Context['LastError'], "Confirming that usual get is error-free in the absense of the session in storage.");
+                    Handler.Request('POST', '/Test/Increment', false, function() {
+                        Handler.Request('GET', '/Test', true, function(Body) {
+                            Test.ok(Body['Value']==2, "Confirming that session data was preserved.");
+                            Test.ok(Handler.SessionID==InitialSessionID, "Re-Confirming that express-session saved the in-memory data, re-creating the session in the database.");
+                            Test.done();
+                        });
+                    });
+                });
+            });
+        });
+    },
+    'TestRegenerateDuring': function(Test) {
+        Test.expect(2);
+        var Handler = new RequestHandler();
+        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+            Handler.Request('POST', '/Test/Increment', false, function() {
+                Handler.Request('PUT', '/FlagDelete', false, function() {
+                    var InitialSessionID = Handler.SessionID;
+                    Handler.Request('PUT', '/Session/Regeneration', false, function() {
+                        Test.ok(!Context['LastError'], "Confirming that session regeneration is error-free in the absense of the session in storage.");
+                        Test.ok(Handler.SessionID!=InitialSessionID, "Confirming that the session was regenerated.");
+                        Test.done();
+                    });
+                });
+            });
+        });
+    },
+    'TestDestroyMethodDuring': function(Test) {
+        Test.expect(3);
+        var Handler = new RequestHandler();
+        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+            Handler.Request('POST', '/Test/Increment', false, function() {
+                var InitialSessionID = Handler.SessionID;
+                Handler.Request('PUT', '/FlagDelete', false, function() {
+                    Handler.Request('PUT', '/Session/Destruction', false, function() {
+                        Test.ok(!Context['LastError'], "Confirming that session destruction is error-free in the absense of the session in storage.");
+                        Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
+                        Handler.Request('POST', '/Test/Increment', false, function() {
+                            Test.ok(Handler.SessionID != InitialSessionID, "Confirming that a new session ID has been generated.");
+                            Test.done();
+                        });
+                    });
+                });
+            });
+        });
+    },
+    'TestReloadMethodDuring': function(Test) {
+        Test.expect(4);
+        var Handler = new RequestHandler();
+        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+            Handler.Request('POST', '/Test/Increment', false, function() {
+                var InitialSessionID = Handler.SessionID;
+                Handler.Request('PUT', '/FlagDelete', false, function() {
+                    Handler.Request('PUT', '/Session/Reload/Test', false, function() {
+                        Test.ok(Context['LastError'], "Confirming that reload returned an error");
+                        Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
+                        Handler.Request('GET', '/Test', true, function(Body) {
+                            Test.ok(Handler.SessionID == InitialSessionID, "Re-confirming that a new session ID has not been generated.");
+                            Test.ok(Body['Value']==2, "Confirming that the session data from memory was preserved.");
+                            Test.done();
+                        });
+                    });
+                });
+            });
+        });
+    },
+    'TestSaveDuring': function(Test) {
+        Test.expect(4);
+        var Handler = new RequestHandler();
+        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+            Handler.Request('POST', '/Test/Increment', false, function() {
+                var InitialSessionID = Handler.SessionID;
+                Handler.Request('PUT', '/FlagDelete', false, function() {
+                    Handler.Request('PUT', '/Session/Save/Test', false, function() {
+                        Test.ok(!Context['LastError'], "Confirming that save didn't encounter an error.");
+                        Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
+                        Handler.Request('GET', '/Test', true, function(Body) {
+                            Test.ok(Handler.SessionID == InitialSessionID, "Re-confirming that a new session ID has not been generated.");
+                            Test.ok(Body['Value']==2, "Confirming that the session data was preserved.");
+                            Test.done();
+                        });
+                    });
                 });
             });
         });

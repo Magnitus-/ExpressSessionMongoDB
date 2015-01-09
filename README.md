@@ -31,6 +31,8 @@ In the directory where the module is located, run the following 2 commands on th
 - npm install
 - npm test
 
+Running the tests will a bit over a minute due to the TimeToLive test.
+
 Usage
 =====
 
@@ -48,7 +50,7 @@ var StoreOptions = {'TimeToLive': 0, 'IndexSessionID': false}; //Read more below
 MongoDB.MongoClient.connect("mongodb://localhost:27017/SomeDatabase", function(Err, DB) { //Obviously, your code will probably differ here
     Store(DB, function(Err, SessionStore) {
         var Options = {'secret': 'qwerty!', 'store': SessionStore}; //Look at the express-session project to find out all the options you can pass here
-        App.use(ExpressSession(Options);
+        App.use(ExpressSession(Options));
         
         //Probably more code
 
@@ -66,7 +68,11 @@ function(<DBHandle>, <Callback>, <Options>);
 
 &lt;Options&gt; are the options you can pass to the session store instance. It is an object with the following properties: 
 
-- SessionID: Can be either true or false (default). If true, session IDs will be indexed with a unique requirement in the MongoDB database, making the creation of sessions slower, but their access faster. It will also report an error if 2 sessions with duplicate IDs are generated.
+- IndexSessionID: Can be either true or false (default). If true, session IDs will be indexed with a unique requirement in the MongoDB database, making the creation of sessions slower, but their access faster. 
+
+While theorically, an error should be reported if duplicate session IDs are created, this will never happen in practice because of the way the express-session project is implemented (the fact that the call it makes to create or update a session in the database are the same). Rather, if ever express-session somehow creates two sessions with duplicate IDs, one will overwrite the error. Obviously, a good key generator will make this occurence logically or probabilistically impossible.
+
+Additional note: I tried passing a key generator that always generated the same key to express-session to see how it would react, but it appended some random string to the generated keys so express-session does seem to take extra precautions to avoid collisions.
 
 - TimeToLive: Integer than can be 0 (default) or greater. If greater than 0, a Time-to-Live index will be set which will represent how long (in seconds) a session can be idle in the database (neither written to nor accessed) before MongoDB deletes it.
 Note that according to the author of "MongoDB: The Definitive Guide", MongoDB check on Time-To-Live indexes about once per minute, so you should not rely on a session getting deleted the exact second it expires.
@@ -83,6 +89,23 @@ function(<Err>, <StoreInstance>)
 
 &lt;StoreInstance&gt; is the resulting store instance you can pass to express-session.
 
+TimeToLive and express-session
+------------------------------
+
+For those who use the TimeToLive options (which introduces the phenomemon of sessions being deleted in the database without express-session knowing it):
+
+If sessions are deleted between request (when Req.session doesn't exist), express-session will just automatically generate a new session (blank with a new ID) whenever a client submits a cookie for a session that doesn't exist
+
+Things get just a little more complicated if a session gets deleted while the server is processing a request (when Req.session exists) which could feasibly happen if TimeToLive is very short and a requests takes a while to process:
+
+- Manipulations on the Req.session will behave as normal and the session will be re-saved in the database when the request returns (ok for TimeToLive, probably bad if you want to delete sessions from an admin panel)
+
+- Calls to Req.session.regenerate or Req.session.destroy will not report an error and will behave as expected: a new generation will be created during the request in the former and the Req.session object will be taken down in the later (nothing will be done in the database, because the session will already have been deleted there)
+
+- Calls to Req.session.reload won't do anything (there is session in the database to reload from), but will report an error.
+
+- Calls to Req.session.save will behave as expected and will save the session back to the database (in this case, re-create it).
+
 Future
 ======
 
@@ -90,8 +113,6 @@ Immediate plans for this module include more integration tests (internal tests a
 
 - Running the tests for all possible option permutations you can pass to express-session during the initialization.
 - Running tests when the database is down.
-- Running tests with TimeToLive > 0, to ensure that express-session handles session getting delete from the database by MongoDB gracefully.
-- Running tests with IndexSessionID set to true, to ensure that express-session properly bubble ups the potential error that occurs with duplicate session IDs and allows the user to set a handler for it.
 
 Longer term plans include implementing further useful options you can pass to the constructor as well as an evented API. 
 
@@ -114,3 +135,9 @@ Documentation display fix.
 - Add filter functionality to permit keys in sessions to contain '$', '.' or '\0'. 
 - More tests
 - Documentation formatting fix
+
+1.1.1
+-----
+
+- Fixed some documentation errors.
+- Added TimeToLive tests.
