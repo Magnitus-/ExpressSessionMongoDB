@@ -304,7 +304,7 @@ exports.TimeToLive = {
     },
     'tearDown': function(Callback) {
         TearDown(Callback);
-    }/*,
+    },
     'TestBefore': function(Test) {
         Test.expect(2);
         var Handler = new RequestHandler();
@@ -318,7 +318,7 @@ exports.TimeToLive = {
                 });
             }, 72000);
         });
-    }*/,
+    },
    'TestObjectAPIDuring': function(Test) {
         Test.expect(4);
         var Handler = new RequestHandler();
