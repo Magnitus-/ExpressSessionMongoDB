@@ -178,8 +178,8 @@ exports.Accessors = {
         });
     },
     'Testsetget': function(Test) {
-        Test.expect(24);
-        function TestPermutation(TimeToLive, IndexSessionID, Callback)
+        Test.expect(48);
+        function TestPermutation(TimeToLive, IndexSessionID, DeleteFlag, Callback)
         {
             Store(Context['DB'], function(Err, TestStore) {
                 TestStore.set('a', {'a': 1, 'b': 2, 'SessionID': [1,2,3], 'SomeObject': {'a': 3}}, function() {
@@ -209,13 +209,21 @@ exports.Accessors = {
                         });
                     });
                 });
-            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID});
+            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID, 'DeleteFlag': DeleteFlag});
         }
-        TestPermutation(0, false, function() {
-            TestPermutation(100, false, function() {
-                TestPermutation(0, true, function() {
-                    TestPermutation(100, true, function() {
-                        Test.done();
+        TestPermutation(0, false, false, function() {
+            TestPermutation(100, false, false, function() {
+                TestPermutation(0, true, false, function() {
+                    TestPermutation(100, true, false, function() {
+                        TestPermutation(0, false, true, function() {
+                            TestPermutation(100, false, true, function() {
+                                TestPermutation(0, true, true, function() {
+                                    TestPermutation(100, true, true, function() {
+                                        Test.done();
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });
@@ -234,8 +242,8 @@ exports.Accessors = {
         }, {'Filter': true});
     },
     'Testdestroy': function(Test) {
-        Test.expect(12);
-        function TestPermutation(TimeToLive, IndexSessionID, Callback)
+        Test.expect(24);
+        function TestPermutation(TimeToLive, IndexSessionID, DeleteFlag, Callback)
         {
             Store(Context['DB'], function(Err, TestStore) {
                 TestStore.set('a', {'a':1}, function() {
@@ -268,21 +276,29 @@ exports.Accessors = {
                         });
                     });
                 });
-            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID});
+            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID, 'DeleteFlag': DeleteFlag});
         }
-        TestPermutation(0, false, function() {
-            TestPermutation(100, false, function() {
-                TestPermutation(0, true, function() {
-                    TestPermutation(100, true, function() {
-                        Test.done();
+        TestPermutation(0, false, false, function() {
+            TestPermutation(100, false, false, function() {
+                TestPermutation(0, true, false, function() {
+                    TestPermutation(100, true, false, function() {
+                        TestPermutation(0, false, true, function() {
+                            TestPermutation(100, false, true, function() {
+                                TestPermutation(0, true, true, function() {
+                                    TestPermutation(100, true, true, function() {
+                                        Test.done();
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });
         });
     },
     'Testlength': function(Test) {
-        Test.expect(20);
-        function TestPermutation(TimeToLive, IndexSessionID, Callback)
+        Test.expect(40);
+        function TestPermutation(TimeToLive, IndexSessionID, DeleteFlag, Callback)
         {
             Store(Context['DB'], function(Err, TestStore) {
                 TestStore.length(function(Err, Count) {
@@ -313,21 +329,29 @@ exports.Accessors = {
                         });
                     });
                 });
-            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID});
+            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID, 'DeleteFlag': DeleteFlag});
         }
-        TestPermutation(0, false, function() {
-            TestPermutation(100, false, function() {
-                TestPermutation(0, true, function() {
-                    TestPermutation(100, true, function() {
-                        Test.done();
+        TestPermutation(0, false, false, function() {
+            TestPermutation(100, false, false, function() {
+                TestPermutation(0, true, false, function() {
+                    TestPermutation(100, true, false, function() {
+                        TestPermutation(0, false, true, function() {
+                            TestPermutation(100, false, true, function() {
+                                TestPermutation(0, true, true, function() {
+                                    TestPermutation(100, true, true, function() {
+                                        Test.done();
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });
         });
     },
     'Testclear': function(Test) {
-        Test.expect(20);
-        function TestPermutation(TimeToLive, IndexSessionID, Callback)
+        Test.expect(40);
+        function TestPermutation(TimeToLive, IndexSessionID, DeleteFlag, Callback)
         {
             Store(Context['DB'], function(Err, TestStore) {
                 TestStore.clear(function() {
@@ -339,7 +363,13 @@ exports.Accessors = {
                                     TestStore.length(function(Err, Count) {
                                         Test.ok(Count==0, 'Confirming that populated collection is cleared of all data.');
                                         ConfirmCollectionState(Indexes, Test, function() {
-                                            Callback();
+                                            Context.DB.dropDatabase(function(Err, Result) {
+                                                Context.DB.close();
+                                                MongoDB.MongoClient.connect("mongodb://localhost:27017/"+RandomIdentifier, {native_parser:true}, function(Err, DB) {
+                                                    Context['DB'] = DB;
+                                                    Callback();
+                                                });
+                                            });
                                         });
                                     });
                                 });
@@ -347,17 +377,61 @@ exports.Accessors = {
                         });
                     });
                 });
-            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID});
+            }, {'TimeToLive': TimeToLive, 'IndexSessionID': IndexSessionID, 'DeleteFlag': DeleteFlag});
         }
-        TestPermutation(0, false, function() {
-            TestPermutation(100, false, function() {
-                TestPermutation(0, true, function() {
-                    TestPermutation(100, true, function() {
-                        Test.done();
+        TestPermutation(0, false, false, function() {
+            TestPermutation(100, false, false, function() {
+                TestPermutation(0, true, false, function() {
+                    TestPermutation(100, true, false, function() {
+                        TestPermutation(0, false, true, function() {
+                            TestPermutation(100, false, true, function() {
+                                TestPermutation(0, true, true, function() {
+                                    TestPermutation(100, true, true, function() {
+                                        Test.done();
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });
         });
+    },
+    'TestDeleteFlagAndCleanup': function(Test) {
+        Test.expect(4);
+        Store(Context['DB'], function(Err, TestStore) {
+            Context['DB'].collection('Sessions', function(Err, SessionStore) {
+                TestStore.set('a', {}, function() {
+                    TestStore.set('b', {}, function() {
+                        TestStore.set('c', {}, function() {
+                            TestStore.destroy('a', function(Err) {
+                                SessionStore.findOne({'SessionID': 'a'}, function(Err, SessionA) {
+                                    Test.ok(SessionA.Delete, "Confirming that the session is flagged as deleted");
+                                    TestStore.FlagDeletion('b', function(Err) {
+                                        SessionStore.findOne({'SessionID': 'b'}, function(Err, SessionB) {
+                                            Test.ok(SessionB.Delete, "Confirming that the session is flagged as deleted");
+                                            TestStore.clear(function(Err) {
+                                                TestStore.FlagDeletion('c', function(Err) {
+                                                    SessionStore.findOne({'SessionID': 'c'}, function(Err, SessionC) {
+                                                        Test.ok(SessionC.Delete, "Confirming that the session is flagged as deleted");
+                                                        TestStore.set('d', {}, function() {
+                                                            TestStore.Cleanup(function(Err, Amount) {
+                                                                Test.ok(Amount==3, "Confirming that cleanup deleted 3 flagged sessions and left last one alone.");
+                                                                Test.done();
+                                                            });
+                                                        });
+                                                    });
+                                                });
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        }, {'DeleteFlag': true});
     }
 };
 

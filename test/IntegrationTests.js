@@ -2,10 +2,11 @@
 //MIT License: https://raw.githubusercontent.com/Magnitus-/ExpressSessionMongoDB/master/License.txt
 
 var MongoDB = require('mongodb');
-Express = require('express');
-Session = require('express-session');
-Store = require('../lib/ExpressSessionMongoDB');
-Http = require('http');
+var Express = require('express');
+var Session = require('express-session');
+var Store = require('../lib/ExpressSessionMongoDB');
+var Http = require('http');
+var Nimble = require('nimble');
 
 var RandomIdentifier = 'ExpressSessionMongoDBTestDB'+Math.random().toString(36).slice(-8);
 var Context = {};
@@ -39,6 +40,20 @@ function Setup(Options, Callback, StoreOptions)
                     Callback();
                 }
             }
+            Context['App'].get('/Wait/:Var', function(Req, Res) {
+                if(Req.params.Var==0)
+                {
+                    setImmediate(function() {
+                        Res.end();
+                    });
+                }
+                else
+                {
+                    setTimeout(function() {
+                       Res.end();
+                    }, Req.params.Var);
+                }
+            });
             Context['App'].put('/FlagDelete', function(Req, Res) {
                 Context['Delete'] = 1;
                 Res.end();
@@ -289,7 +304,7 @@ exports.TimeToLive = {
     },
     'tearDown': function(Callback) {
         TearDown(Callback);
-    },
+    }/*,
     'TestBefore': function(Test) {
         Test.expect(2);
         var Handler = new RequestHandler();
@@ -303,7 +318,7 @@ exports.TimeToLive = {
                 });
             }, 72000);
         });
-    },
+    }*/,
    'TestObjectAPIDuring': function(Test) {
         Test.expect(4);
         var Handler = new RequestHandler();
@@ -392,30 +407,90 @@ exports.TimeToLive = {
 };
 
 exports.Delete = {
-    'setUp': function(Callback) {
-        Setup({'secret': 'qwerty!'}, Callback, {'TimeToLive': 2});
-    },
-    'tearDown': function(Callback) {
-        TearDown(Callback);
-    },
-    'TestMain': function(Test) {
+    'TestDeleteGet': function(Test) {
         Test.expect(4);
-        var Handler = new RequestHandler();
-        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
-            Handler.Request('POST', '/Test/Increment', false, function() {
-                var InitialSessionID = Handler.SessionID;
-                SessionsCollection.update({}, {'$set': {'Delete': true}}, function(Err, Result) {
-                    Handler.Request('GET', '/Test', true, function(Body) {
-                        Test.ok(!Context['LastError'], "Confirming that the process was error-free.");
-                        Test.ok(Handler.SessionID != InitialSessionID, "Confirming that a new session ID has been generated.");
-                        Test.ok(!Body['Value'], "Confirming that the session data didn't survive transition.");
-                        SessionsCollection.findOne({'SessionID': InitialSessionID}, function(Err, Session) {
-                            Test.ok(!Session, "Confirming that previous session was wiped out from database.");
-                            Test.done();
+        Setup({'secret': 'qwerty!'}, function() {
+            var Handler = new RequestHandler();
+            Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
+                Handler.Request('POST', '/Test/Increment', false, function() {
+                    var InitialSessionID = Handler.SessionID;
+                    SessionsCollection.update({}, {'$set': {'Delete': true}}, function(Err, Result) {
+                        Handler.Request('GET', '/Test', true, function(Body) {
+                            Test.ok(!Context['LastError'], "Confirming that the process was error-free.");
+                            Test.ok(Handler.SessionID != InitialSessionID, "Confirming that a new session ID has been generated.");
+                            Test.ok(!Body['Value'], "Confirming that the session data didn't survive transition.");
+                            SessionsCollection.count({}, function(Err, Amount) {
+                                Test.ok(Amount==2, "Confirming that previous session is still in the database, but flagged as deleted.");
+                                TearDown(function() {
+                                    Test.done();
+                                });
+                            });
                         });
                     });
                 });
             });
         });
+    },
+    'TestDeleteParallelFails': function(Test) { //This is to confirm the need that FlagDeletion/Cleanup addresses
+        Test.expect(2);
+        Setup({'secret': 'qwerty!'}, function() {
+            var Handler1 = new RequestHandler();
+            var Handler2 = new RequestHandler();
+            Handler1.Request('POST', '/Test/Increment', false, function() {
+                var InitialSessionID = Handler1.SessionID;
+                Handler2.SessionID = Handler1.SessionID;
+                Nimble.parallel([
+                    function(Callback) {
+                        Handler1.Request('GET', '/Wait/100', false, function() {
+                            Callback();
+                        });
+                    },
+                    function(Callback) {
+                        Handler2.Request('PUT', '/Session/Destruction', false, function() {
+                            Callback();
+                        });
+                    }],
+                    function(Err) {
+                        Handler1.Request('GET', '/Test', true, function(Body) {
+                            Test.ok(Handler1.SessionID==InitialSessionID, "Confirming the initial session survived desipte deletion.");
+                            Test.ok(Body['Value']==1, "Confirming the initial session data survived.");
+                            TearDown(function() {
+                                Test.done();
+                            });
+                        });
+                    });
+            });
+        });
+    },
+    'TestDeleteParallelWorks': function(Test) { //The fix, and my apologies for copy-pasting 95%+ of the code from the previous test. Got lazy.
+        Test.expect(2);
+        Setup({'secret': 'qwerty!'}, function() {
+            var Handler1 = new RequestHandler();
+            var Handler2 = new RequestHandler();
+            Handler1.Request('POST', '/Test/Increment', false, function() {
+                var InitialSessionID = Handler1.SessionID;
+                Handler2.SessionID = Handler1.SessionID;
+                Nimble.parallel([
+                    function(Callback) {
+                        Handler1.Request('GET', '/Wait/100', false, function() {
+                            Callback();
+                        });
+                    },
+                    function(Callback) {
+                        Handler2.Request('PUT', '/Session/Destruction', false, function() {
+                            Callback();
+                        });
+                    }],
+                    function(Err) {
+                        Handler1.Request('GET', '/Test', true, function(Body) {
+                            Test.ok(Handler1.SessionID!=InitialSessionID, "Confirming the initial session did not survive deletion.");
+                            Test.ok(!Body['Value'], "Confirming the initial session data did not survive.");
+                            TearDown(function() {
+                                Test.done();
+                            });
+                        });
+                    });
+            });
+        }, {'DeleteFlag': true});
     }
 };

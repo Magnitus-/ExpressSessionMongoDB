@@ -79,6 +79,8 @@ Note that according to the author of "MongoDB: The Definitive Guide", MongoDB ch
 
 - Filter: Can be true or false (default). If set to true, the '.', '$' and '\0' special characters are sanitized in session properties before storage. Necessary to store sessions with properties that contains those characters. You can gain a bit of speed by setting this to false if you are certain your session properties won't contain those characters. 
 
+- DeleteFlags: If set to true (default is false), it causes the 'destroy' (which express-session uses to delete sessions in the MongoDB store) and 'clear' calls to call 'FlagDeletion' instead of directly deleting sessions from the database. Read below for more details.
+
 &lt;Callback&gt; is the function that will be called when the session store instance (and its underlying database collection/index dependencies) have been created. It takes the following signature: 
 
 ```javascript
@@ -105,6 +107,33 @@ Things get just a little more complicated if a session gets deleted while the se
 - Calls to Req.session.reload won't do anything (there is no session in the database to reload from), but will report an error.
 
 - Calls to Req.session.save will behave as expected and will save the session back to the database (in this case, re-create it).
+
+FlagDeletion and Cleanup methods
+--------------------------------
+
+In addition to the API, the 'FlagDeletion' and 'Cleanup' calls were implemented.
+
+The reason for this is to more realiably delete sessions when it matters (perhaps for security reasons).
+
+Because express-session holds sessions in memory during requests and save them back to the database before responding, physically deleting a session in the database while a request (or multiple requests) is(are) in progress will cause the said request(s) to be restore the session in the database.
+
+Feel free to look at the 'TestDeleteParallelFails' test in the integration tests for an empirical demonstration of the above phenomenon.
+
+The only way to reliably purge a session's content is to flag the session as deleted, cause the 'get' accessor to report the request as 'not found' when it is flaged as deleted and then wait for all requests holding the session in memory to complete before physically deleting the session from the database.
+
+- 'FlagDeletion' has the following signature: function(&lt;SessionID&gt;, &lt;Callback&gt;)
+
+If &lt;SessionID&gt; is not null, it will flag the corresponding session as deleted, else it will flag all sessions as deleted.
+
+&lt;Callback&gt; is called when the flagging is completed, its first argument being an error (if any is encountered, else null) and its second argument being the number of sessions that were flagged.
+
+- 'Cleanup' has the following signature: function(&lt;Callback&gt;)
+
+'Cleanup' deletes all sessions that are flagged as deleted from the database. It should not immediately be called after a session is flagged for deletion as sufficient time should be given for any request containing the session to complete.
+
+Alternatively, you could simply set the 'TimeToLive' option with a sufficiently big value for sessions to automatically be deleted a certain amount of time after they were last accessed.
+
+Here, &lt;Callback&gt; is called after the cleanup is done and contains as its first argument an error (if any, else null) and as its second argument the number of sessions that were deleted from the database.
 
 Future
 ======
@@ -142,10 +171,18 @@ Documentation display fix.
 - Expended on documentation and fixed some documentation errors.
 - Added TimeToLive tests.
 
-1.1.2
+1.2.0
 -----
 
 - A small bit of refactoring in code and integration tests
 - Fixed a bug where the Filter option wouldn't be applied if the TimeToLive option is greater than 0
 - Added a facility for the get accessor to delete a session when fetching it if it is flaged to be deleted.
 - Added integration test for the above.
+
+1.3.0
+-----
+
+- Changed the delete flag function not to delete on get, but merely report the session as not found
+- Added a method to mark a session as for deletion
+- Added a method to clean up sessions that are marked for deletion
+- Added tests and documentation for the above
