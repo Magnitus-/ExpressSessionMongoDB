@@ -141,3 +141,11 @@ Documentation display fix.
 
 - Expended on documentation and fixed some documentation errors.
 - Added TimeToLive tests.
+
+1.1.2
+-----
+
+- A small bit of refactoring in code and integration tests
+- Fixed a bug where the Filter option wouldn't be applied if the TimeToLive option is greater than 0
+- Added a facility for the get accessor to delete a session when fetching it if it is flaged to be deleted.
+- Added integration test for the above.

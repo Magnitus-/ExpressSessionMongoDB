@@ -289,7 +289,7 @@ exports.TimeToLive = {
     },
     'tearDown': function(Callback) {
         TearDown(Callback);
-    },
+    }/*,
     'TestBefore': function(Test) {
         Test.expect(2);
         var Handler = new RequestHandler();
@@ -303,22 +303,20 @@ exports.TimeToLive = {
                 });
             }, 72000);
         });
-    },
+    }*/,
    'TestObjectAPIDuring': function(Test) {
         Test.expect(4);
         var Handler = new RequestHandler();
-        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
-            Handler.Request('PUT', '/FlagDelete', false, function() {
-                var InitialSessionID = Handler.SessionID;
+        Handler.Request('PUT', '/FlagDelete', false, function() {
+            var InitialSessionID = Handler.SessionID;
+            Handler.Request('POST', '/Test/Increment', false, function() {
+                Test.ok(Handler.SessionID==InitialSessionID, "Confirming that express-session saved the in-memory data, re-creating the session in the database.");
+                Test.ok(!Context['LastError'], "Confirming that usual get is error-free in the absense of the session in storage.");
                 Handler.Request('POST', '/Test/Increment', false, function() {
-                    Test.ok(Handler.SessionID==InitialSessionID, "Confirming that express-session saved the in-memory data, re-creating the session in the database.");
-                    Test.ok(!Context['LastError'], "Confirming that usual get is error-free in the absense of the session in storage.");
-                    Handler.Request('POST', '/Test/Increment', false, function() {
-                        Handler.Request('GET', '/Test', true, function(Body) {
-                            Test.ok(Body['Value']==2, "Confirming that session data was preserved.");
-                            Test.ok(Handler.SessionID==InitialSessionID, "Re-Confirming that express-session saved the in-memory data, re-creating the session in the database.");
-                            Test.done();
-                        });
+                    Handler.Request('GET', '/Test', true, function(Body) {
+                        Test.ok(Body['Value']==2, "Confirming that session data was preserved.");
+                        Test.ok(Handler.SessionID==InitialSessionID, "Re-Confirming that express-session saved the in-memory data, re-creating the session in the database.");
+                        Test.done();
                     });
                 });
             });
@@ -327,15 +325,13 @@ exports.TimeToLive = {
     'TestRegenerateDuring': function(Test) {
         Test.expect(2);
         var Handler = new RequestHandler();
-        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
-            Handler.Request('POST', '/Test/Increment', false, function() {
-                Handler.Request('PUT', '/FlagDelete', false, function() {
-                    var InitialSessionID = Handler.SessionID;
-                    Handler.Request('PUT', '/Session/Regeneration', false, function() {
-                        Test.ok(!Context['LastError'], "Confirming that session regeneration is error-free in the absense of the session in storage.");
-                        Test.ok(Handler.SessionID!=InitialSessionID, "Confirming that the session was regenerated.");
-                        Test.done();
-                    });
+        Handler.Request('POST', '/Test/Increment', false, function() {
+            Handler.Request('PUT', '/FlagDelete', false, function() {
+                var InitialSessionID = Handler.SessionID;
+                Handler.Request('PUT', '/Session/Regeneration', false, function() {
+                    Test.ok(!Context['LastError'], "Confirming that session regeneration is error-free in the absense of the session in storage.");
+                    Test.ok(Handler.SessionID!=InitialSessionID, "Confirming that the session was regenerated.");
+                    Test.done();
                 });
             });
         });
@@ -343,17 +339,15 @@ exports.TimeToLive = {
     'TestDestroyMethodDuring': function(Test) {
         Test.expect(3);
         var Handler = new RequestHandler();
-        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
-            Handler.Request('POST', '/Test/Increment', false, function() {
-                var InitialSessionID = Handler.SessionID;
-                Handler.Request('PUT', '/FlagDelete', false, function() {
-                    Handler.Request('PUT', '/Session/Destruction', false, function() {
-                        Test.ok(!Context['LastError'], "Confirming that session destruction is error-free in the absense of the session in storage.");
-                        Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
-                        Handler.Request('POST', '/Test/Increment', false, function() {
-                            Test.ok(Handler.SessionID != InitialSessionID, "Confirming that a new session ID has been generated.");
-                            Test.done();
-                        });
+        Handler.Request('POST', '/Test/Increment', false, function() {
+            var InitialSessionID = Handler.SessionID;
+            Handler.Request('PUT', '/FlagDelete', false, function() {
+                Handler.Request('PUT', '/Session/Destruction', false, function() {
+                    Test.ok(!Context['LastError'], "Confirming that session destruction is error-free in the absense of the session in storage.");
+                    Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
+                    Handler.Request('POST', '/Test/Increment', false, function() {
+                        Test.ok(Handler.SessionID != InitialSessionID, "Confirming that a new session ID has been generated.");
+                        Test.done();
                     });
                 });
             });
@@ -362,18 +356,16 @@ exports.TimeToLive = {
     'TestReloadMethodDuring': function(Test) {
         Test.expect(4);
         var Handler = new RequestHandler();
-        Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
-            Handler.Request('POST', '/Test/Increment', false, function() {
-                var InitialSessionID = Handler.SessionID;
-                Handler.Request('PUT', '/FlagDelete', false, function() {
-                    Handler.Request('PUT', '/Session/Reload/Test', false, function() {
-                        Test.ok(Context['LastError'], "Confirming that reload returned an error");
-                        Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
-                        Handler.Request('GET', '/Test', true, function(Body) {
-                            Test.ok(Handler.SessionID == InitialSessionID, "Re-confirming that a new session ID has not been generated.");
-                            Test.ok(Body['Value']==2, "Confirming that the session data from memory was preserved.");
-                            Test.done();
-                        });
+        Handler.Request('POST', '/Test/Increment', false, function() {
+            var InitialSessionID = Handler.SessionID;
+            Handler.Request('PUT', '/FlagDelete', false, function() {
+                Handler.Request('PUT', '/Session/Reload/Test', false, function() {
+                    Test.ok(Context['LastError'], "Confirming that reload returned an error");
+                    Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
+                    Handler.Request('GET', '/Test', true, function(Body) {
+                        Test.ok(Handler.SessionID == InitialSessionID, "Re-confirming that a new session ID has not been generated.");
+                        Test.ok(Body['Value']==2, "Confirming that the session data from memory was preserved.");
+                        Test.done();
                     });
                 });
             });
@@ -382,16 +374,43 @@ exports.TimeToLive = {
     'TestSaveDuring': function(Test) {
         Test.expect(4);
         var Handler = new RequestHandler();
+        Handler.Request('POST', '/Test/Increment', false, function() {
+            var InitialSessionID = Handler.SessionID;
+            Handler.Request('PUT', '/FlagDelete', false, function() {
+                Handler.Request('PUT', '/Session/Save/Test', false, function() {
+                    Test.ok(!Context['LastError'], "Confirming that save didn't encounter an error.");
+                    Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
+                    Handler.Request('GET', '/Test', true, function(Body) {
+                        Test.ok(Handler.SessionID == InitialSessionID, "Re-confirming that a new session ID has not been generated.");
+                        Test.ok(Body['Value']==2, "Confirming that the session data was preserved.");
+                        Test.done();
+                    });
+                });
+            });
+        });
+    }
+};
+
+exports.Delete = {
+    'setUp': function(Callback) {
+        Setup({'secret': 'qwerty!'}, Callback, {'TimeToLive': 2});
+    },
+    'tearDown': function(Callback) {
+        TearDown(Callback);
+    },
+    'TestMain': function(Test) {
+        Test.expect(4);
+        var Handler = new RequestHandler();
         Context['DB'].collection('Sessions', function(Err, SessionsCollection) {
             Handler.Request('POST', '/Test/Increment', false, function() {
                 var InitialSessionID = Handler.SessionID;
-                Handler.Request('PUT', '/FlagDelete', false, function() {
-                    Handler.Request('PUT', '/Session/Save/Test', false, function() {
-                        Test.ok(!Context['LastError'], "Confirming that save didn't encounter an error.");
-                        Test.ok(Handler.SessionID == InitialSessionID, "Confirming that a new session ID has not been generated.");
-                        Handler.Request('GET', '/Test', true, function(Body) {
-                            Test.ok(Handler.SessionID == InitialSessionID, "Re-confirming that a new session ID has not been generated.");
-                            Test.ok(Body['Value']==2, "Confirming that the session data was preserved.");
+                SessionsCollection.update({}, {'$set': {'Delete': true}}, function(Err, Result) {
+                    Handler.Request('GET', '/Test', true, function(Body) {
+                        Test.ok(!Context['LastError'], "Confirming that the process was error-free.");
+                        Test.ok(Handler.SessionID != InitialSessionID, "Confirming that a new session ID has been generated.");
+                        Test.ok(!Body['Value'], "Confirming that the session data didn't survive transition.");
+                        SessionsCollection.findOne({'SessionID': InitialSessionID}, function(Err, Session) {
+                            Test.ok(!Session, "Confirming that previous session was wiped out from database.");
                             Test.done();
                         });
                     });
