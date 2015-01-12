@@ -189,3 +189,11 @@ Documentation display fix.
 -----
 
 Minor documentation improvement.
+
+1.3.2
+-----
+
+- Updated express-session dependency to version 1.10.1
+- Update mongodb dependency to version 1.4.28
+- Implemented integration tests for the Filter option
+- Fixed a bug where the Filter option would cause sessions to be improperly stored

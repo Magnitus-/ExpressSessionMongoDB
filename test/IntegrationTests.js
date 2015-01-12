@@ -40,6 +40,10 @@ function Setup(Options, Callback, StoreOptions)
                     Callback();
                 }
             }
+            Context['App'].put('/:Var/ConvolutedValue', function(Req, Res) {
+                Req.session[Req.params.Var] = {'a.b': [1, 2, {'a': 1, '$b\0c': {'Test.Testdot-*-dot*-': 35}}]};
+                Res.end();
+            });
             Context['App'].get('/Wait/:Var', function(Req, Res) {
                 if(Req.params.Var==0)
                 {
@@ -297,7 +301,26 @@ exports.BasicSetup = {
         });
     }
 };
- 
+
+exports.Filter = {
+    'setUp': function(Callback) {
+        Setup({'secret': 'qwerty!'}, Callback, {'Filter': true});
+    },
+    'tearDown': function(Callback) {
+        TearDown(Callback);
+    },
+    'TestMain': function(Test) {
+        Test.expect(1);
+        var Handler = new RequestHandler();
+        Handler.Request('PUT', '/Test/ConvolutedValue', false, function() {
+            Handler.Request('GET', '/Test', true, function(Body) {
+                Test.ok((Body['Value']['a.b'][0]==1)&&(Body['Value']['a.b'][1]==2)&&(Body['Value']['a.b'][2]['a']==1)&&(Body['Value']['a.b'][2]['$b\0c']['Test.Testdot-*-dot*-']==35), "Confirming that filtering works as expected.");
+                Test.done();
+            });
+        });
+    }
+};
+
 exports.TimeToLive = {
     'setUp': function(Callback) {
         Setup({'secret': 'qwerty!'}, Callback, {'TimeToLive': 2});
