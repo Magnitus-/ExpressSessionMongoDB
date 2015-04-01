@@ -197,3 +197,9 @@ Minor documentation improvement.
 - Update mongodb dependency to version 1.4.28
 - Implemented integration tests for the Filter option
 - Fixed a bug where the Filter option would cause sessions to be improperly stored
+
+1.3.3
+-----
+
+- Updated mongodb dependency to version 1.4.35.
+- Updated express-session dependency to version 1.10.4.
