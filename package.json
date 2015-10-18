@@ -33,7 +33,9 @@
     "express": "~4.10.6"
   },
   "scripts": {
-    "test": "./node_modules/nodeunit/bin/nodeunit test"
+    "test": "./node_modules/nodeunit/bin/nodeunit test",
+    "test-internals": "./node_modules/nodeunit/bin/nodeunit test/InternalTests.js",
+    "test-integration": "./node_modules/nodeunit/bin/nodeunit test/IntregrationTests.js"
   },
   "license": "MIT",
   "directories": {

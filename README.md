@@ -42,6 +42,19 @@ Note on tests
 
 This was the case in my previous apt-get installed MongoDB 2.4.x instance, but the $ character doesn't seem to be generating an error when used directly in a session key in my more current MongoDB 3.x.x instance. Either way, escaping $ won't do any harm so I disabled that particular test.
 
+Running test suites separately
+------------------------------
+
+For this projects, tests are separated into 2 categories:
+
+- Internal tests (to make sure that everything in the project works as intended)
+- Integration tests (to make sure the provided API plays well with express-session)
+
+By default, both all tests are executed. You can also run a category of tests separately by running:
+
+- For internal tests: npm run test-internals
+- For integration tests: npm run test-integration
+
 Usage
 =====
 
@@ -160,6 +173,7 @@ Versions History
 
 - Updated express-session dependency to 1.9.x or higher, but less than 2.x.x 
 - Updated mongodb driver support to be 1.4.x and 2.x.x compatible. Updated dependency specification accordingly
+- Added commands to run internal and integration tests separately
 
 1.3.3
 -----
