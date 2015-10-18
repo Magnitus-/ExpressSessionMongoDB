@@ -155,7 +155,7 @@ Longer term plans include implementing further useful options you can pass to th
 Versions History
 ================
 
-1.4.0
+1.4.0 (in progress)
 -----
 
 - Updated express-session dependency to 1.9.x or higher, but less than 2.x.x 

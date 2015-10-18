@@ -10,7 +10,7 @@ var RandomIdentifier = 'ExpressSessionMongoDBTestDB'+Math.random().toString(36).
 
 function ConfirmCollectionState(Indexes, Test, Callback)
 {
-    Context['DB'].collectionNames(Context['CollectionName'], {'namesOnly': true} ,function(Err, Collections) {
+    Context['DB'].listCollections({'name': Context['CollectionName']}).toArray(function(Err, Collections) {
         Test.ok(Collections.length==1, "Confirming that the collection was properly created");
         Context['DB'].collection(Context['CollectionName'], function(Err, SessionCollection) {
             SessionCollection.indexInformation({full:true}, function(err, IndexInformation) {
