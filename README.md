@@ -33,7 +33,7 @@ In the directory where the module is located, run the following 2 commands on th
 
 Running the tests will a bit over a minute due to the TimeToLive test.
 
-Note on tests
+Note on Tests
 -------------
 
 - There may be a long pause in the middle of the tests while the time-to-live fonctionality is tested.
@@ -42,7 +42,7 @@ Note on tests
 
 This was the case in my previous apt-get installed MongoDB 2.4.x instance, but the $ character doesn't seem to be generating an error when used directly in a session key in my more current MongoDB 3.x.x instance. Either way, escaping $ won't do any harm so I disabled that particular test.
 
-Running test suites separately
+Running Test Categories Separately
 ------------------------------
 
 For this projects, tests are separated into 2 categories:
