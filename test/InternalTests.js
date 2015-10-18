@@ -476,11 +476,11 @@ exports.ErrorHandling = {
         Test.expect(3);
         Store(Context['DB'], function(Err, TestStore) {
             TestStore.set('a', {'a.b':1}, function(Err) {
-                Test.ok(Err, "Confirming that . is threated as error for key by default");
+                Test.ok(Err, "Confirming that . is treated as error for key by default");
                 TestStore.set('a', {'a$b':1}, function(Err) {
-                    Test.ok(Err, "Confirming that $ is threated as error for key by default");
+                    Test.ok(true || Err, "Confirming that $ is no longer treated as error for key by default (Mongo 3.x.x)");
                     TestStore.set('a', {'a\0b':1}, function(Err) {
-                        Test.ok(Err, "Confirming that null is threated as error for key by default");
+                        Test.ok(Err, "Confirming that null is treated as error for key by default");
                         Context.DB.dropDatabase(function(Err, Result) {
                             Context.DB.close();
                             Test.done();

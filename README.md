@@ -33,6 +33,15 @@ In the directory where the module is located, run the following 2 commands on th
 
 Running the tests will a bit over a minute due to the TimeToLive test.
 
+Note on tests
+-------------
+
+- There may be a long pause in the middle of the tests while the time-to-live fonctionality is tested.
+
+-T here is a test to validate the usefulness of the filtering functionality which ensures the characters that are escaped when filtering is on (., $ and \0) produce errors in the query when not escaped.
+
+This was the case in my previous apt-get installed MongoDB 2.4.x instance, but the $ character doesn't seem to be generating an error when used directly in a session key in my more current MongoDB 3.x.x instance. Either way, escaping $ won't do any harm so I disabled that particular test.
+
 Usage
 =====
 

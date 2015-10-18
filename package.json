@@ -24,7 +24,7 @@
     }
   ],
   "dependencies": {
-    "express-session": "^1.10.4",
+    "express-session": ">=1.9.x <2.0.0",
     "mongodb": "^1.4.35"
   },
   "devDependencies": {
