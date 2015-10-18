@@ -38,7 +38,7 @@ Note on tests
 
 - There may be a long pause in the middle of the tests while the time-to-live fonctionality is tested.
 
--T here is a test to validate the usefulness of the filtering functionality which ensures the characters that are escaped when filtering is on (., $ and \0) produce errors in the query when not escaped.
+- There is a test to validate the usefulness of the filtering functionality which ensures the characters that are escaped when filtering is on (., $ and \0) produce errors in the query when not escaped.
 
 This was the case in my previous apt-get installed MongoDB 2.4.x instance, but the $ character doesn't seem to be generating an error when used directly in a session key in my more current MongoDB 3.x.x instance. Either way, escaping $ won't do any harm so I disabled that particular test.
 
@@ -155,49 +155,17 @@ Longer term plans include implementing further useful options you can pass to th
 Versions History
 ================
 
-1.0.0 
+1.4.0
 -----
 
-Initial Release. 
+- Updated express-session dependency to 1.9.x or higher, but less than 2.x.x 
+- Updated mongodb driver support to be 1.4.x and 2.x.x compatible. Updated dependency specification accordingly
 
-1.0.1 
+1.3.3
 -----
 
-Documentation display fix.
-
-1.1.0
------
-
-- Add filter functionality to permit keys in sessions to contain '$', '.' or '\0'. 
-- More tests
-- Documentation formatting fix
-
-1.1.1
------
-
-- Expended on documentation and fixed some documentation errors.
-- Added TimeToLive tests.
-
-1.2.0
------
-
-- A small bit of refactoring in code and integration tests
-- Fixed a bug where the Filter option wouldn't be applied if the TimeToLive option is greater than 0
-- Added a facility for the get accessor to delete a session when fetching it if it is flaged to be deleted.
-- Added integration test for the above.
-
-1.3.0
------
-
-- Changed the delete flag function not to delete on get, but merely report the session as not found
-- Added a method to mark a session as for deletion
-- Added a method to clean up sessions that are marked for deletion
-- Added tests and documentation for the above
-
-1.3.1
------
-
-Minor documentation improvement.
+- Updated mongodb dependency to version 1.4.35.
+- Updated express-session dependency to version 1.10.4.
 
 1.3.2
 -----
@@ -207,8 +175,60 @@ Minor documentation improvement.
 - Implemented integration tests for the Filter option
 - Fixed a bug where the Filter option would cause sessions to be improperly stored
 
-1.3.3
+1.3.1
 -----
 
-- Updated mongodb dependency to version 1.4.35.
-- Updated express-session dependency to version 1.10.4.
+Minor documentation improvement.
+
+1.3.0
+-----
+
+- Changed the delete flag function not to delete on get, but merely report the session as not found
+- Added a method to mark a session as for deletion
+- Added a method to clean up sessions that are marked for deletion
+- Added tests and documentation for the above
+
+1.2.0
+-----
+
+- A small bit of refactoring in code and integration tests
+- Fixed a bug where the Filter option wouldn't be applied if the TimeToLive option is greater than 0
+- Added a facility for the get accessor to delete a session when fetching it if it is flaged to be deleted.
+- Added integration test for the above.
+
+1.1.1
+-----
+
+- Expended on documentation and fixed some documentation errors.
+- Added TimeToLive tests.
+
+1.1.0
+-----
+
+- Add filter functionality to permit keys in sessions to contain '$', '.' or '\0'. 
+- More tests
+- Documentation formatting fix
+
+1.0.1 
+-----
+
+Documentation display fix.
+
+1.0.0 
+-----
+
+Initial Release. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
