@@ -16,7 +16,11 @@ Requirements
 
 - Read the package.json file for other dependencies. The devDependencies are solely to run the tests and not required for production.
 
+- The &gt;=2.0.x &lt;2.1.x version range for the mongodb driver is not supported due to a bug in the driver that has been introduced in 2.0.x and fixed in 2.1.x.
+
 [1] Later versions should also work. If you find it not to be the case, let me know.
+
+[2] 
 
 Installation
 ============
@@ -172,7 +176,7 @@ Versions History
 -----
 
 - Updated express-session dependency to 1.9.x or higher, but less than 2.x.x 
-- Updated mongodb driver support to be 1.4.x and 2.x.x compatible. Updated dependency specification accordingly
+- Updated mongodb driver support to be 1.4.x and 2.1.x compatible. Updated dependency specification accordingly
 - Added commands to run internal and integration tests separately
 
 1.3.3
